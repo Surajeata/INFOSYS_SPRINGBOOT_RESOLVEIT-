@@ -1,29 +1,40 @@
-# RESOLVE-IT
-  
-This is a project built with [Chef](https://chef.convex.dev) using [Convex](https://convex.dev) as its backend.
- You can find docs about Chef with useful information like how to deploy to production [here](https://docs.convex.dev/chef).
-  
-This project is connected to the Convex deployment named [`courteous-cuttlefish-225`](https://dashboard.convex.dev/d/courteous-cuttlefish-225).
-  
-## Project structure
-  
-The frontend code is in the `app` directory and is built with [Vite](https://vitejs.dev/).
-  
-The backend code is in the `convex` directory.
-  
-`npm run dev` will start the frontend and backend servers.
+## About the Project
 
-## App authentication
+Resolve-IT is an end-to-end grievance management platform designed to streamline the way organizations capture, track, and resolve employee or customer issues. The solution provides a frictionless workflow for registering grievances, assigning them to the appropriate teams, monitoring resolution progress, and ensuring transparency across the entire lifecycle of a complaint.
 
-Chef apps use [Convex Auth](https://auth.convex.dev/) with Anonymous auth for easy sign in. You may wish to change this before deploying your app.
+The platform delivers a modern full-stack architecture with a responsive frontend and a scalable backend, ensuring reliability, security, and a seamless user experience. Resolve-IT enables organizations to reduce turnaround time, improve accountability, and enhance overall service quality through structured issue-handling processes.
 
-## Developing and deploying your app
+## Key Features
 
-Check out the [Convex docs](https://docs.convex.dev/) for more information on how to develop with Convex.
-* If you're new to Convex, the [Overview](https://docs.convex.dev/understanding/) is a good place to start
-* Check out the [Hosting and Deployment](https://docs.convex.dev/production/) docs for how to deploy your app
-* Read the [Best Practices](https://docs.convex.dev/understanding/best-practices/) guide for tips on how to improve you app further
+Intuitive Grievance Submission
+-Simple UI for users to log complaints with required details.
 
-## HTTP API
+Automated Routing & Assignment
+-Issues are automatically assigned to the relevant department or resolver.
 
-User-defined http routes are defined in the `convex/router.ts` file. We split these routes into a separate file from `convex/http.ts` to allow us to prevent the LLM from modifying the authentication routes.
+Real-Time Status Tracking
+-Users can view updates, progress, and timestamps for every grievance.
+
+Escalation Engine
+-Built-in logic to escalate unresolved grievances within predefined timeframes.
+
+Admin Dashboard
+-Analytics, workload management, and resolution metrics for administrators.
+
+Secure Authentication
+-Protects user data and enables controlled access based on user roles.
+
+
+
+## Technology Stack
+
+Frontend: Vite + React + TypeScript
+Backend: Node.js + Convex server functions
+Database: Convex document storage
+Build & Tools: Chef (Convex AI) scaffolding, TailwindCSS, ESLint
+
+## Purpose & Vision
+
+Resolve-IT was developed to bring structure, visibility, and accountability to grievance handling. The platform aims to empower organizations with a system that minimizes manual intervention, improves inter-team communication, and ensures that no grievance slips through the cracks.
+
+Whether deployed internally within a company or used as a customer-facing support tool, Resolve-IT enhances service quality and builds trust by enabling timely, transparent issue resolution.
