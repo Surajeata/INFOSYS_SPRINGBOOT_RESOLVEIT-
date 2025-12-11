@@ -3,7 +3,7 @@ import { internal } from "./_generated/api";
 
 const crons = cronJobs();
 
-// Run auto-escalation check every 30 minutes
+
 crons.interval(
   "auto-escalation-check",
   { minutes: 30 },
@@ -11,10 +11,10 @@ crons.interval(
   {}
 );
 
-// Update daily analytics at midnight
+
 crons.cron(
   "daily-analytics-update", 
-  "0 0 * * *", // Every day at midnight
+  "0 0 * * *", 
   internal.analytics.updateDailyAnalytics,
   {}
 );
