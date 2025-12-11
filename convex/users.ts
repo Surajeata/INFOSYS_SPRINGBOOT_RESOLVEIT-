@@ -15,7 +15,7 @@ export const createUserProfile = mutation({
       throw new Error("Must be logged in");
     }
 
-    // Check if profile already exists
+    
     const existingProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -37,7 +37,7 @@ export const createUserProfile = mutation({
   },
 });
 
-// Add this new function to promote a user to admin
+
 export const promoteToAdmin = mutation({
   args: {
     userEmail: v.string(),
@@ -48,13 +48,13 @@ export const promoteToAdmin = mutation({
       throw new Error("Must be logged in");
     }
 
-    // Check if current user is already an admin
+    
     const currentUserProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", currentUserId))
       .first();
 
-    // Allow the first admin to be created, or require existing admin
+    
     const existingAdmins = await ctx.db.query("userProfiles").collect();
     const hasAdmins = existingAdmins.some(profile => profile.role === "ADMIN");
 
@@ -62,7 +62,7 @@ export const promoteToAdmin = mutation({
       throw new Error("Only admins can promote users");
     }
 
-    // Find the user by email
+    
     const allUsers = await ctx.db.query("users").collect();
     const targetUser = allUsers.find(user => user.email === args.userEmail);
     
@@ -70,7 +70,7 @@ export const promoteToAdmin = mutation({
       throw new Error("User not found");
     }
 
-    // Find their profile
+    
     const targetProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", targetUser._id))
@@ -80,7 +80,7 @@ export const promoteToAdmin = mutation({
       throw new Error("User profile not found");
     }
 
-    // Update their role to ADMIN
+
     await ctx.db.patch(targetProfile._id, {
       role: "ADMIN",
     });
@@ -154,7 +154,6 @@ export const getAllStaff = query({
       throw new Error("Must be logged in");
     }
 
-    // Check if user is admin/moderator
     const userProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -169,7 +168,6 @@ export const getAllStaff = query({
       profile.role === "ADMIN" || profile.role === "MODERATOR"
     );
 
-    // Get user details for each staff member
     const staffWithUsers = await Promise.all(
       staffProfiles.map(async (profile) => {
         const user = await ctx.db.get(profile.userId);
