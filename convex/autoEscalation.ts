@@ -7,7 +7,7 @@ export const checkAutoEscalation = internalAction({
   handler: async (ctx): Promise<{ processed: number; escalated: number; timestamp: number }> => {
     const now = Date.now();
     
-    // Get all complaints that might need escalation
+  
     const complaints: any[] = await ctx.runQuery(internal.autoEscalation.getComplaintsForEscalation, {});
     
     let escalatedCount = 0;
@@ -17,7 +17,7 @@ export const checkAutoEscalation = internalAction({
       let escalationReason = "";
       let newPriority = complaint.priority;
       
-      // Check if complaint is overdue
+     
       if (complaint.dueDate && now > complaint.dueDate) {
         const hoursOverdue = Math.floor((now - complaint.dueDate) / (1000 * 60 * 60));
         
@@ -29,7 +29,7 @@ export const checkAutoEscalation = internalAction({
         }
       }
       
-      // Check priority-based escalation with more aggressive timelines
+     
       const ageInHours = Math.floor((now - complaint._creationTime) / (1000 * 60 * 60));
       
       if (complaint.priority === "CRITICAL" && ageInHours >= 2) {
@@ -49,7 +49,7 @@ export const checkAutoEscalation = internalAction({
         newPriority = "MEDIUM";
       }
       
-      // Check category-based escalation (sensitive categories get faster escalation)
+      
       if (["HARASSMENT", "DISCRIMINATION", "SAFETY"].includes(complaint.category)) {
         if (ageInHours >= 4) {
           shouldEscalate = true;
@@ -58,14 +58,14 @@ export const checkAutoEscalation = internalAction({
         }
       }
       
-      // Check for complaints with high urgency level
+      
       if (complaint.urgencyLevel && complaint.urgencyLevel >= 8 && ageInHours >= 6) {
         shouldEscalate = true;
         escalationReason = `High urgency complaint (level ${complaint.urgencyLevel}) unresolved for ${ageInHours} hours`;
         newPriority = "CRITICAL";
       }
       
-      // Check for multiple status changes without resolution (indicates complexity)
+     
       const statusHistory = await ctx.runQuery(internal.autoEscalation.getComplaintStatusHistory, {
         complaintId: complaint._id
       });
@@ -97,7 +97,7 @@ export const checkAutoEscalation = internalAction({
 export const getComplaintsForEscalation = internalQuery({
   args: {},
   handler: async (ctx) => {
-    // Get complaints that are not resolved/closed and not already escalated recently
+    
     const complaints = await ctx.db
       .query("complaints")
       .filter((q) => 
@@ -108,7 +108,6 @@ export const getComplaintsForEscalation = internalQuery({
       )
       .collect();
     
-    // Filter out complaints that were escalated in the last 4 hours to prevent spam
     const fourHoursAgo = Date.now() - (4 * 60 * 60 * 1000);
     return complaints.filter(complaint => 
       !complaint.escalatedAt || complaint.escalatedAt < fourHoursAgo
@@ -143,7 +142,7 @@ export const performAutoEscalation = internalMutation({
     const complaint = await ctx.db.get(args.complaintId);
     if (!complaint) return;
     
-    // Find appropriate escalation target based on category and priority
+    
     const escalationRules = await ctx.db
       .query("escalationRules")
       .withIndex("by_category_priority", (q) => 
@@ -154,7 +153,7 @@ export const performAutoEscalation = internalMutation({
     
     let escalateTo = escalationRules?.escalateTo;
     
-    // If no specific rule, find the least loaded admin/moderator
+    
     if (!escalateTo) {
       const staff = await ctx.db
         .query("userProfiles")
@@ -171,7 +170,7 @@ export const performAutoEscalation = internalMutation({
         .collect();
       
       if (staff.length > 0) {
-        // Find staff member with least active complaints
+      
         const staffWorkload = await Promise.all(
           staff.map(async (member) => {
             const activeComplaints = await ctx.db
@@ -193,7 +192,7 @@ export const performAutoEscalation = internalMutation({
           })
         );
         
-        // Sort by workload (ascending) and prefer SUPER_ADMIN > ADMIN > MODERATOR
+        
         staffWorkload.sort((a, b) => {
           if (a.workload !== b.workload) return a.workload - b.workload;
           
@@ -208,7 +207,7 @@ export const performAutoEscalation = internalMutation({
     const previousStatus = complaint.status;
     const newPriority = args.newPriority || complaint.priority;
     
-    // Update complaint
+   
     await ctx.db.patch(args.complaintId, {
       status: "ESCALATED",
       escalatedAt: Date.now(),
@@ -217,7 +216,7 @@ export const performAutoEscalation = internalMutation({
       priority: newPriority,
     });
     
-    // Create status history
+   
     await ctx.db.insert("statusHistory", {
       complaintId: args.complaintId,
       status: "ESCALATED",
@@ -228,7 +227,7 @@ export const performAutoEscalation = internalMutation({
       previousStatus,
     });
     
-    // Create notifications for complaint owner
+  
     if (complaint.userId && !complaint.isAnonymous) {
       await ctx.db.insert("notifications", {
         userId: complaint.userId,
@@ -240,7 +239,7 @@ export const performAutoEscalation = internalMutation({
       });
     }
     
-    // Create notification for assigned staff
+    
     if (escalateTo) {
       await ctx.db.insert("notifications", {
         userId: escalateTo,
@@ -252,7 +251,7 @@ export const performAutoEscalation = internalMutation({
       });
     }
     
-    // Schedule email notifications
+    
     await ctx.scheduler.runAfter(0, internal.autoEscalation.sendEscalationEmails, {
       complaintId: args.complaintId,
       reason: args.reason,
@@ -274,7 +273,6 @@ export const sendEscalationEmails = internalAction({
     
     if (!complaint) return;
     
-    // Send email to complaint owner
     if (complaint.ownerEmail) {
       await ctx.runAction(internal.emailActions.sendEmailNotification, {
         to: complaint.ownerEmail,
@@ -319,7 +317,7 @@ export const sendEscalationEmails = internalAction({
       });
     }
     
-    // Send email to assigned staff
+    
     if (complaint.assignedEmail) {
       await ctx.runAction(internal.emailActions.sendEmailNotification, {
         to: complaint.assignedEmail,
@@ -401,7 +399,7 @@ export const getComplaintForEmail = internalQuery({
   },
 });
 
-// Manual escalation function for staff
+
 export const manualEscalation = mutation({
   args: {
     complaintId: v.id("complaints"),
@@ -415,7 +413,7 @@ export const manualEscalation = mutation({
     )),
   },
   handler: async (ctx, args) => {
-    // This would include authentication checks for staff
+    
     const complaint = await ctx.db.get(args.complaintId);
     if (!complaint) throw new Error("Complaint not found");
     
