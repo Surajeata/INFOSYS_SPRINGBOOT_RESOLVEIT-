@@ -1,16 +1,9 @@
-/**
- * This script runs `npx @convex-dev/auth` to help with setting up
- * environment variables for Convex Auth.
- *
- * You can safely delete it and remove it from package.json scripts.
- */
-
 import fs from "fs";
 import { config as loadEnvFile } from "dotenv";
 import { spawnSync } from "child_process";
 
 if (!fs.existsSync(".env.local")) {
-  // Something is off, skip the script.
+  
   process.exit(0);
 }
 
@@ -20,7 +13,7 @@ loadEnvFile({ path: ".env.local", processEnv: config });
 const runOnceWorkflow = process.argv.includes("--once");
 
 if (runOnceWorkflow && config.SETUP_SCRIPT_RAN !== undefined) {
-  // The script has already ran once, skip.
+
   process.exit(0);
 }
 
