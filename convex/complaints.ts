@@ -45,7 +45,6 @@ export const createComplaint = mutation({
       throw new Error("Email is required for anonymous complaints");
     }
 
-    // Auto-assign priority based on category if not provided
     let priority = args.priority || "MEDIUM";
     if (args.category === "URGENT" || args.category === "SAFETY" || args.category === "HARASSMENT") {
       priority = "HIGH";
@@ -54,7 +53,7 @@ export const createComplaint = mutation({
       priority = "CRITICAL";
     }
 
-    // Calculate due date based on priority
+
     const now = Date.now();
     let dueDate = now + (7 * 24 * 60 * 60 * 1000); // Default 7 days
     switch (priority) {
@@ -90,7 +89,7 @@ export const createComplaint = mutation({
       dueDate,
     });
 
-    // Create initial status history
+    
     let changedByName = "System";
     if (!isAnonymous && userId) {
       const userProfile = await ctx.db
@@ -114,7 +113,7 @@ export const createComplaint = mutation({
       isSystemGenerated: true,
     });
 
-    // Create audit log entry
+  
     await ctx.db.insert("auditLog", {
       userId: isAnonymous ? undefined : (userId || undefined),
       action: "CREATE_COMPLAINT",
@@ -177,7 +176,6 @@ export const getAllComplaints = query({
       throw new Error("Must be logged in");
     }
 
-    // Check if user is admin/moderator
     const userProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -189,7 +187,7 @@ export const getAllComplaints = query({
 
     let query = ctx.db.query("complaints").order("desc");
 
-    // Apply filters
+    
     if (args.status) {
       query = ctx.db.query("complaints").withIndex("by_status", (q) => q.eq("status", args.status as any));
     }
@@ -205,7 +203,6 @@ export const getAllComplaints = query({
 
     let complaints = await query.collect();
 
-    // Apply date filters
     if (args.dateFrom || args.dateTo) {
       complaints = complaints.filter(complaint => {
         const creationTime = complaint._creationTime;
@@ -215,12 +212,12 @@ export const getAllComplaints = query({
       });
     }
 
-    // Apply limit
+  
     if (args.limit) {
       complaints = complaints.slice(0, args.limit);
     }
 
-    // Get user details for each complaint
+   
     const complaintsWithUsers = await Promise.all(
       complaints.map(async (complaint) => {
         let userName = "Anonymous User";
@@ -242,7 +239,7 @@ export const getAllComplaints = query({
           }
         }
 
-        // Get assigned user details
+        
         let assignedUserName = null;
         if (complaint.assignedTo) {
           const assignedProfile = await ctx.db
@@ -281,14 +278,14 @@ export const getComplaintById = query({
       return null;
     }
 
-    // Check access permissions
+   
     let hasAccess = false;
     
     if (complaint.isAnonymous) {
-      // For anonymous complaints, check email match
+      
       hasAccess = args.anonymousEmail === complaint.anonymousEmail;
     } else if (userId) {
-      // For registered users, check ownership or admin/moderator role
+     
       const userProfile = await ctx.db
         .query("userProfiles")
         .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -304,7 +301,7 @@ export const getComplaintById = query({
       throw new Error("Access denied");
     }
 
-    // Get complaint owner details
+  
     let ownerName = "Anonymous User";
     let ownerEmail = complaint.anonymousEmail || "N/A";
 
@@ -324,7 +321,7 @@ export const getComplaintById = query({
       }
     }
 
-    // Get assigned user details
+    
     let assignedUserName = null;
     if (complaint.assignedTo) {
       const assignedProfile = await ctx.db
@@ -369,7 +366,7 @@ export const updateComplaintStatus = mutation({
       throw new Error("Must be logged in");
     }
 
-    // Check if user is admin/moderator
+    
     const userProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -386,7 +383,7 @@ export const updateComplaintStatus = mutation({
 
     const previousStatus = complaint.status;
 
-    // Update complaint
+  
     const updateData: any = {
       status: args.status,
     };
@@ -409,7 +406,7 @@ export const updateComplaintStatus = mutation({
 
     await ctx.db.patch(args.complaintId, updateData);
 
-    // Create status history entry
+    
     await ctx.db.insert("statusHistory", {
       complaintId: args.complaintId,
       status: args.status,
@@ -420,7 +417,7 @@ export const updateComplaintStatus = mutation({
       previousStatus,
     });
 
-    // Create audit log entry
+    
     await ctx.db.insert("auditLog", {
       userId,
       action: "UPDATE_COMPLAINT_STATUS",
@@ -481,7 +478,7 @@ export const escalateComplaint = mutation({
 
     await ctx.db.patch(args.complaintId, updateData);
 
-    // Create status history entry
+    
     await ctx.db.insert("statusHistory", {
       complaintId: args.complaintId,
       status: "ESCALATED",
@@ -492,7 +489,7 @@ export const escalateComplaint = mutation({
       previousStatus: complaint.status,
     });
 
-    // Create escalation note
+    
     await ctx.db.insert("internalNotes", {
       complaintId: args.complaintId,
       note: `Complaint escalated by ${userProfile.firstName} ${userProfile.lastName}. Reason: ${args.reason}`,
@@ -516,7 +513,6 @@ export const assignComplaint = mutation({
       throw new Error("Must be logged in");
     }
 
-    // Check if user is admin/moderator
     const userProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -531,7 +527,7 @@ export const assignComplaint = mutation({
       throw new Error("Complaint not found");
     }
 
-    // Get assigned user details
+    
     const assignedUserProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", args.assignedTo))
@@ -573,7 +569,7 @@ export const getComplaintHistory = query({
       return [];
     }
 
-    // Check access permissions (same logic as getComplaintById)
+
     let hasAccess = false;
     
     if (complaint.isAnonymous) {
@@ -624,7 +620,7 @@ export const addInternalNote = mutation({
       throw new Error("Must be logged in");
     }
 
-    // Check if user is admin/moderator
+   
     const userProfile = await ctx.db
       .query("userProfiles")
       .withIndex("by_user", (q) => q.eq("userId", userId))
@@ -666,7 +662,6 @@ export const getComplaintNotes = query({
       return [];
     }
 
-    // Check access permissions
     let hasAccess = false;
     let isStaff = false;
     
@@ -694,7 +689,7 @@ export const getComplaintNotes = query({
       .order("desc")
       .collect();
 
-    // Filter to public notes only if user is not staff
+  
     if (args.publicOnly || !isStaff) {
       notes = notes.filter(note => note.isPublic);
     }
